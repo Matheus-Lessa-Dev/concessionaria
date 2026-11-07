@@ -6,6 +6,15 @@ from django.views.decorators.csrf import csrf_exempt
 from api.models import Vaga
 
 
+def vaga_to_dict(vaga):
+    return {
+        'id': vaga.id,
+        'numero': vaga.numero,
+        'tipo': vaga.tipo,
+        'status': vaga.status,
+    }
+
+
 @csrf_exempt
 def lista_vagas(request):
 
@@ -20,12 +29,7 @@ def lista_vagas(request):
         vagas = vagas.order_by('numero')
 
         resultado = [
-            {
-                'id': vaga.id,
-                'numero': vaga.numero,
-                'tipo': vaga.tipo,
-                'status': vaga.status
-            }
+            vaga_to_dict(vaga)
             for vaga in vagas
         ]
 
@@ -56,15 +60,7 @@ def lista_vagas(request):
                 status='LIVRE'
             )
 
-            return JsonResponse(
-                {
-                    'id': vaga.id,
-                    'numero': vaga.numero,
-                    'tipo': vaga.tipo,
-                    'status': vaga.status
-                },
-                status=201
-            )
+            return JsonResponse(vaga_to_dict(vaga), status=201)
 
         except json.JSONDecodeError:
             return JsonResponse(
@@ -89,12 +85,7 @@ def detalhe_vaga(request, id):
                 status=404
             )
 
-        return JsonResponse({
-            'id': vaga.id,
-            'numero': vaga.numero,
-            'tipo': vaga.tipo,
-            'status': vaga.status
-        })
+        return JsonResponse(vaga_to_dict(vaga))
 
     elif request.method == 'PUT':
         try:
@@ -137,12 +128,7 @@ def detalhe_vaga(request, id):
         vaga.status = status
         vaga.save()
 
-        return JsonResponse({
-            'id': vaga.id,
-            'numero': vaga.numero,
-            'tipo': vaga.tipo,
-            'status': vaga.status
-        })
+        return JsonResponse(vaga_to_dict(vaga))
 
     elif request.method == 'DELETE':
         try:

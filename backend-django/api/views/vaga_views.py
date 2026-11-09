@@ -1,5 +1,6 @@
 import json
 
+from django.db import IntegrityError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -92,7 +93,13 @@ def lista_vagas(request):
 
             return JsonResponse(vaga_to_dict(vaga), status=201)
 
-        except json.JSONDecodeError:
+        except IntegrityError:
+            return JsonResponse(
+                {'error': 'Número de vaga já cadastrado'},
+                status=409
+            )
+
+        except ValueError:
             return JsonResponse(
                 {'error': 'JSON inválido'},
                 status=400
@@ -120,7 +127,7 @@ def detalhe_vaga(request, id):
     elif request.method == 'PUT':
         try:
             dados = json.loads(request.body)
-        except json.JSONDecodeError:
+        except ValueError:
             return JsonResponse(
                 {'error': 'JSON inválido'},
                 status=400
@@ -145,7 +152,14 @@ def detalhe_vaga(request, id):
         vaga.numero = numero
         vaga.tipo = tipo
         vaga.status = status
-        vaga.save()
+
+        try:
+            vaga.save()
+        except IntegrityError:
+            return JsonResponse(
+                {'error': 'Número de vaga já cadastrado'},
+                status=409
+            )
 
         return JsonResponse(vaga_to_dict(vaga))
 

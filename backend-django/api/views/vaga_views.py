@@ -15,6 +15,36 @@ def vaga_to_dict(vaga):
     }
 
 
+def validar_vaga(dados):
+    if not isinstance(dados, dict):
+        return JsonResponse(
+            {'error': 'O corpo da requisição deve ser um objeto JSON'},
+            status=400
+        )
+
+    numero = dados.get('numero')
+
+    if not isinstance(numero, str) or not numero.strip():
+        return JsonResponse(
+            {'error': "Campo 'numero' é obrigatório"},
+            status=400
+        )
+
+    if len(numero.strip()) > 10:
+        return JsonResponse(
+            {'error': "Campo 'numero' deve ter no máximo 10 caracteres"},
+            status=400
+        )
+
+    if dados.get('tipo') not in ('CARRO', 'MOTO'):
+        return JsonResponse(
+            {'error': "Campo 'tipo' deve ser CARRO ou MOTO"},
+            status=400
+        )
+
+    return None
+
+
 @csrf_exempt
 def lista_vagas(request):
 
@@ -39,20 +69,12 @@ def lista_vagas(request):
         try:
             dados = json.loads(request.body)
 
-            numero = dados.get('numero')
-            tipo = dados.get('tipo')
+            erro = validar_vaga(dados)
+            if erro:
+                return erro
 
-            if not numero:
-                return JsonResponse(
-                    {'error': "Campo 'numero' é obrigatório"},
-                    status=400
-                )
-
-            if not tipo or tipo not in ['CARRO', 'MOTO']:
-                return JsonResponse(
-                    {'error': "Campo 'tipo' deve ser CARRO ou MOTO"},
-                    status=400
-                )
+            numero = dados['numero'].strip()
+            tipo = dados['tipo']
 
             vaga = Vaga.objects.create(
                 numero=numero,
@@ -96,21 +118,13 @@ def detalhe_vaga(request, id):
                 status=400
             )
 
-        numero = dados.get('numero')
-        tipo = dados.get('tipo')
+        erro = validar_vaga(dados)
+        if erro:
+            return erro
+
+        numero = dados['numero'].strip()
+        tipo = dados['tipo']
         status = dados.get('status')
-
-        if not numero:
-            return JsonResponse(
-                {'error': "Campo 'numero' é obrigatório"},
-                status=400
-            )
-
-        if not tipo or tipo not in ['CARRO', 'MOTO']:
-            return JsonResponse(
-                {'error': "Campo 'tipo' deve ser CARRO ou MOTO"},
-                status=400
-            )
 
         if status not in ['LIVRE', 'OCUPADA']:
             status = 'LIVRE'

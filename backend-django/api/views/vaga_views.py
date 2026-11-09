@@ -42,6 +42,14 @@ def validar_vaga(dados):
             status=400
         )
 
+    status = dados.get('status')
+
+    if status is not None and status not in ('LIVRE', 'OCUPADA'):
+        return JsonResponse(
+            {'error': "Campo 'status' deve ser LIVRE ou OCUPADA"},
+            status=400
+        )
+
     return None
 
 
@@ -124,10 +132,7 @@ def detalhe_vaga(request, id):
 
         numero = dados['numero'].strip()
         tipo = dados['tipo']
-        status = dados.get('status')
-
-        if status not in ['LIVRE', 'OCUPADA']:
-            status = 'LIVRE'
+        status = dados.get('status') or 'LIVRE'
 
         try:
             vaga = Vaga.objects.get(id=id)

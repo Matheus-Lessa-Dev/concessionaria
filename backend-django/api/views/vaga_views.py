@@ -1,6 +1,7 @@
 import json
 
 from django.db import IntegrityError
+from django.db.models import ProtectedError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -172,7 +173,13 @@ def detalhe_vaga(request, id):
                 status=404
             )
 
-        vaga.delete()
+        try:
+            vaga.delete()
+        except ProtectedError:
+            return JsonResponse(
+                {'error': 'Não é possível excluir vaga com permanências registradas'},
+                status=409
+            )
 
         return JsonResponse({'message': 'Vaga excluída com sucesso'})
 

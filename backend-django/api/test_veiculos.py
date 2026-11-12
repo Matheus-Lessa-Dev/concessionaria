@@ -1,13 +1,8 @@
-from django.test import Client, TestCase, override_settings
-from django.urls import include, path
+from django.test import Client, TestCase
 
 from api.models import Cliente, Permanencia, Vaga, Veiculo
 
 
-urlpatterns = [path('api/', include('api.veiculo_urls'))]
-
-
-@override_settings(ROOT_URLCONF=__name__)
 class VeiculoTests(TestCase):
     url = '/api/veiculos'
 

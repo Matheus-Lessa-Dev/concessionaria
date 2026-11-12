@@ -4,7 +4,6 @@ from sqlite3 import SQLITE_CONSTRAINT_FOREIGNKEY, SQLITE_CONSTRAINT_UNIQUE
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 from api.models import Cliente, Veiculo
 
@@ -96,7 +95,6 @@ def _salvar_veiculo(request, veiculo_id=None):
     return JsonResponse(veiculo_to_dict(veiculo))
 
 
-@csrf_exempt
 def lista_veiculos(request):
     if request.method == 'GET':
         veiculos = Veiculo.objects.select_related('cliente').order_by('placa')
@@ -108,7 +106,6 @@ def lista_veiculos(request):
     return _metodo_invalido('GET, POST, OPTIONS')
 
 
-@csrf_exempt
 def detalhe_veiculo(request, veiculo_id):
     if request.method not in ('GET', 'PUT', 'DELETE'):
         return _metodo_invalido('GET, PUT, DELETE, OPTIONS')

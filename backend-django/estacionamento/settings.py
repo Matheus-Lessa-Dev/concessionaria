@@ -32,6 +32,10 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',
 ]
@@ -45,6 +49,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'estacionamento.urls'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # O frontend usa URLs sem barra; as rotas da API aceitam as duas formas.
 APPEND_SLASH = False

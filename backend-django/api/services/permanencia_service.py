@@ -1,10 +1,8 @@
 import math
+from datetime import datetime
 from decimal import Decimal
 
-from django.db import transaction
-from django.utils import timezone
-
-from .models import Permanencia, Veiculo, Vaga
+from ..models import Permanencia, Veiculo, Vaga
 
 
 TARIFA_POR_HORA = Decimal("5.00")
@@ -30,109 +28,98 @@ def permanencia_to_dict(permanencia):
         "status": permanencia.status
     }
 
+def _calcular_valor(entrada, saida):
+    tempo_decorrido = (saida - entrada).total_seconds()
+
+    horas = max(1, math.ceil(tempo_decorrido / 3600))
+
+    return TARIFA_POR_HORA * Decimal(horas)
+
+
 
 def registrar_entrada(veiculo_id, vaga_id):
-    with transaction.atomic():
-
-        veiculo = Veiculo.objects.select_for_update().filter(
-            id=veiculo_id
-        ).first()
-
-        if veiculo is None:
-            raise LookupError("Veículo não encontrado.")
-
-        if Permanencia.objects.filter(
-            veiculo_id=veiculo_id,
-            status="ABERTO"
-        ).exists():
-            raise ValueError(
-                "Veículo já possui uma permanência em aberto."
-            )
-
-        vaga = Vaga.objects.select_for_update().filter(
-            id=vaga_id
-        ).first()
-
-        if vaga is None:
-            raise LookupError("Vaga não encontrada.")
-
-        if vaga.status == "OCUPADA":
-            raise ValueError("Vaga já está ocupada.")
-
-        vaga.status = "OCUPADA"
-        vaga.save(update_fields=["status"])
-
-        permanencia = Permanencia.objects.create(
-            veiculo=veiculo,
-            vaga=vaga,
-            data_hora_entrada=timezone.now(),
-            status="ABERTO"
+    if Permanencia.objects.filter(
+        veiculo_id=veiculo_id,
+        status="ABERTO"
+    ).exists():
+        raise ValueError(
+            "Veículo já possui uma permanência em aberto."
         )
 
-        return permanencia
+    try:
+        veiculo = Veiculo.objects.get(id=veiculo_id)
+    except Veiculo.DoesNotExist:
+        raise LookupError("Veículo não encontrado.")
+
+    try:
+        vaga = Vaga.objects.get(id=vaga_id)
+    except Vaga.DoesNotExist:
+        raise LookupError("Vaga não encontrada.")
+
+    if vaga.status != "LIVRE":
+        raise ValueError("Vaga já está ocupada.")
+
+    vaga.status = "OCUPADA"
+    vaga.save()
+
+    permanencia = Permanencia.objects.create(
+        veiculo=veiculo,
+        vaga=vaga,
+        data_hora_entrada=datetime.now(),
+        status="ABERTO"
+    )
+
+    return permanencia
 
 
 def registrar_saida(permanencia_id):
-    with transaction.atomic():
+    try:
+        permanencia = Permanencia.objects.get(id=permanencia_id)
+    except Permanencia.DoesNotExist:
+        raise LookupError("Permanência não encontrada.")
 
-        permanencia = Permanencia.objects.select_for_update().filter(
-            id=permanencia_id
-        ).first()
+    if permanencia.status != "ABERTO":
+        raise ValueError("Permanência já foi finalizada.")
 
-        if permanencia is None:
-            raise LookupError("Permanência não encontrada.")
+    try:
+        vaga = Vaga.objects.get(id=permanencia.vaga_id)
+    except Vaga.DoesNotExist:
+        raise LookupError("Vaga vinculada à permanência não encontrada.")
 
-        if permanencia.status == "FINALIZADO":
-            raise ValueError("Permanência já foi finalizada.")
+    saida = datetime.now()
 
-        saida = timezone.now()
+    valor = _calcular_valor(
+        permanencia.data_hora_entrada,
+        saida
+    )
 
-        tempo_decorrido = (
-            saida - permanencia.data_hora_entrada
-        ).total_seconds()
+    permanencia.data_hora_saida = saida
+    permanencia.valor_total = valor
+    permanencia.status = "FINALIZADO"
+    permanencia.save()
 
-        horas = max(1, math.ceil(tempo_decorrido / 3600))
+    vaga.status = "LIVRE"
+    vaga.save()
 
-        valor = TARIFA_POR_HORA * Decimal(horas)
-
-        permanencia.data_hora_saida = saida
-        permanencia.valor_total = valor
-        permanencia.status = "FINALIZADO"
-
-        permanencia.save(update_fields=[
-            "data_hora_saida",
-            "valor_total",
-            "status"
-        ])
-
-        vaga = Vaga.objects.select_for_update().get(
-            id=permanencia.vaga_id
-        )
-
-        vaga.status = "LIVRE"
-        vaga.save(update_fields=["status"])
-
-        return permanencia
+    return permanencia
 
 
-def listar_permanencias(status=None):
+def lista_permanencias(status=None):
     permanencias = Permanencia.objects.select_related(
         "veiculo",
         "vaga"
     ).all()
 
     if status:
-        permanencias = permanencias.filter(status=status.upper())
+        permanencias = permanencias.filter(
+            status=status.upper()
+        )
 
     return permanencias.order_by("-data_hora_entrada")
 
 
 def buscar_por_id(permanencia_id):
-    permanencia = Permanencia.objects.filter(
-        id=permanencia_id
-    ).first()
-
-    if permanencia is None:
+    try:
+        return Permanencia.objects.get(id=permanencia_id)
+    except Permanencia.DoesNotExist:
         raise LookupError("Permanência não encontrada.")
-
-    return permanencia

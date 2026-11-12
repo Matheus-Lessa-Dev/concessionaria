@@ -6,6 +6,7 @@ from django.urls import include, path, re_path
 from api.views.cliente_views import detalhe_cliente, lista_clientes
 from api.views.dashboard_views import dashboard
 from api.views.vaga_views import detalhe_vaga, lista_vagas
+from api.views import permanencia_views
 
 
 def rota_nao_encontrada(request):
@@ -21,5 +22,20 @@ urlpatterns = [
     re_path(r'^vagas/(?P<id>[0-9]+)/?$', detalhe_vaga, name='detalhe_vaga'),
     re_path(r'^dashboard/?$', dashboard, name='dashboard'),
     path('', include('api.veiculo_urls')),
+    re_path(
+        r'^permanencias/entrada/?$',
+        permanencia_views.entrada,
+        name="registrar_entrada"
+    ),
+    re_path(
+        r'^permanencias/(?P<permanencia_id>[0-9]+)/saida/?$',
+        permanencia_views.saida,
+        name="registrar_saida"
+    ),
+    re_path(
+        r'^permanencias/?$',
+        permanencia_views.lista_permanencias,
+        name="lista_permanencias"
+    ),
     re_path(r'^.*$', rota_nao_encontrada),
 ]

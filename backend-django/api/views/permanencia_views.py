@@ -1,10 +1,8 @@
-
 import json
 
 from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
 
-from . import permanencia_service
+from ..services import permanencia_service
 
 
 def validar_id(valor):
@@ -20,14 +18,20 @@ def validar_id(valor):
     return False
 
 
-@require_http_methods(["POST"])
 def entrada(request):
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "Método não permitido."},
+            status=405,
+            headers={"Allow": "POST"}
+        )
+
     try:
         dados = json.loads(request.body)
 
         if not isinstance(dados, dict):
             return JsonResponse({
-                "erro": "O corpo da requisição deve ser um objeto JSON."
+                "error": "O corpo da requisição deve ser um objeto JSON."
             }, status=400)
 
         veiculo_id = dados.get("veiculoId")
@@ -35,20 +39,17 @@ def entrada(request):
 
         if veiculo_id is None or vaga_id is None:
             return JsonResponse({
-                "erro": "Campos veiculoId e vagaId são obrigatórios."
+                "error": "Campos veiculoId e vagaId são obrigatórios."
             }, status=400)
 
         if not validar_id(veiculo_id) or not validar_id(vaga_id):
             return JsonResponse({
-                "erro": "veiculoId e vagaId devem ser números inteiros positivos."
+                "error": "veiculoId e vagaId devem ser números inteiros positivos."
             }, status=400)
 
-        veiculo_id = int(veiculo_id)
-        vaga_id = int(vaga_id)
-
         permanencia = permanencia_service.registrar_entrada(
-            veiculo_id,
-            vaga_id
+            int(veiculo_id),
+            int(vaga_id)
         )
 
         return JsonResponse(
@@ -57,42 +58,70 @@ def entrada(request):
         )
 
     except json.JSONDecodeError:
-        return JsonResponse({"erro": "JSON inválido."}, status=400)
+        return JsonResponse(
+            {"error": "JSON inválido."},
+            status=400
+        )
 
     except LookupError as e:
-        return JsonResponse({"erro": str(e)}, status=404)
+        return JsonResponse(
+            {"error": str(e)},
+            status=404
+        )
 
     except ValueError as e:
-        return JsonResponse({"erro": str(e)}, status=409)
+        return JsonResponse(
+            {"error": str(e)},
+            status=409
+        )
 
 
-@require_http_methods(["PUT"])
 def saida(request, permanencia_id):
+    if request.method != "PUT":
+        return JsonResponse(
+            {"error": "Método não permitido."},
+            status=405,
+            headers={"Allow": "PUT"}
+        )
+
     try:
         permanencia = permanencia_service.registrar_saida(
             permanencia_id
         )
 
         return JsonResponse(
-            permanencia_service.permanencia_to_dict(permanencia)
+            permanencia_service.permanencia_to_dict(permanencia),
+            status=200
         )
 
     except LookupError as e:
-        return JsonResponse({"erro": str(e)}, status=404)
+        return JsonResponse(
+            {"error": str(e)},
+            status=404
+        )
 
     except ValueError as e:
-        return JsonResponse({"erro": str(e)}, status=409)
+        return JsonResponse(
+            {"error": str(e)},
+            status=409
+        )
 
 
-@require_http_methods(["GET"])
-def listar(request):
+def lista_permanencias(request):
+    if request.method != "GET":
+        return JsonResponse(
+            {"error": "Método não permitido."},
+            status=405,
+            headers={"Allow": "GET"}
+        )
+
     status = request.GET.get("status")
 
-    permanencias = permanencia_service.listar_permanencias(status)
+    permanencias = permanencia_service.lista_permanencias(status)
 
     dados = [
         permanencia_service.permanencia_to_dict(p)
         for p in permanencias
     ]
 
-    return JsonResponse(dados, safe=False)
+    return JsonResponse(dados, safe=False, status=200)

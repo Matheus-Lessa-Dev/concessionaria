@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+# Este projeto expõe somente a API, sem administração Django.

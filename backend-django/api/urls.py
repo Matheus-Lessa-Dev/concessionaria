@@ -1,7 +1,7 @@
 """Rotas das views já entregues, compatíveis com o frontend original."""
 
 from django.http import JsonResponse
-from django.urls import re_path
+from django.urls import include, path, re_path
 
 from api.views.cliente_views import detalhe_cliente, lista_clientes
 from api.views.dashboard_views import dashboard
@@ -20,5 +20,6 @@ urlpatterns = [
     re_path(r'^vagas/?$', lista_vagas, name='lista_vagas'),
     re_path(r'^vagas/(?P<id>[0-9]+)/?$', detalhe_vaga, name='detalhe_vaga'),
     re_path(r'^dashboard/?$', dashboard, name='dashboard'),
+    path('', include('api.veiculo_urls')),
     re_path(r'^.*$', rota_nao_encontrada),
 ]

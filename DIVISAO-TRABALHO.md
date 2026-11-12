@@ -1,6 +1,6 @@
 # Divisão do trabalho — Sistema de Estacionamento
 Repositório: https://github.com/Matheus-Lessa-Dev/concessionaria
-Conferência: 30/10/2026 — main, commit 46584d0bfa550d9f4fa6f1b7e9b5234f6191d780
+Conferência: 12/11/2026 — base main, commit 3f9cbd7; trabalho de Matheus na branch feat/infra-django.
 
 ## Objetivo
 
@@ -8,28 +8,50 @@ Substituir o backend Java por Python + Django e o PostgreSQL por SQLite, mantend
 
 ## Situação atual
 
-A estrutura está preparada para começar o trabalho em equipe:
-- Projeto Django e app api criados.
-- Models de Cliente, Veiculo, Vaga e Permanencia e migration inicial presentes.
-- api registrado em INSTALLED_APPS, SQLite configurado, ALLOWED_HOSTS = ['*'] e USE_TZ = False.
-- Pastas api/views e api/services com __init__.py.
-- .gitignore ignora .venv, __pycache__, arquivos .pyc e db.sqlite3.
-Esta conferência foi feita pela leitura dos arquivos no GitHub, sem executar o projeto.
-Os endpoints, CORS e adaptação do Docker ainda precisam ser implementados.
+- Clientes (Eduarda), vagas e dashboard (Ana) já estão na main e foram conectados às URLs do projeto.
+- Django + SQLite e Nginx iniciam pelo Docker Compose, com migrations automáticas e volume persistente.
+- CORS, OPTIONS 204, dispensa de CSRF somente na API e URLs com/sem barra final estão configurados.
+- Models e migration inicial conferidos, sem alterações necessárias para as entregas atuais.
+- 53 testes aprovados no Windows e no container Linux (46 existentes + 7 de integração); check e makemigrations --check --dry-run aprovados.
+- HTML, assets e endpoints disponíveis conferidos por HTTP no proxy Nginx; persistência após restart confirmada.
+- Veículos ainda não foi entregue. A branch de permanências precisa de ajustes do responsável antes de ser integrada.
+- Frontend e arquivos de implementação dos demais integrantes não foram alterados.
 
 ## Matheus — configuração e integração
 
-- Criar estacionamento/middleware.py para CORS, incluindo OPTIONS com HTTP 204.
-- Configurar a dispensa de CSRF para a API e registrar o middleware.
-- Criar api/urls.py e conectar em estacionamento/urls.py.
-- Registrar as rotas conforme as funções dos colegas forem entregues.
-- Garantir que as URLs sem barra final usadas pelo frontend funcionem, incluindo POST e PUT.
-- Criar backend-django/Dockerfile e ajustar docker-compose.yml para Django na porta 8080, sem PostgreSQL.
-- Configurar DB_PATH e volume persistente do SQLite; executar migrate na inicialização.
-- Centralizar mudanças necessárias em models e migrations.
-- Integrar as branches, atualizar o README e validar o sistema completo pelo frontend.
-- Conferir criação automática do banco e persistência após docker compose restart.
-Arquivos principais: estacionamento/settings.py, estacionamento/middleware.py, estacionamento/urls.py, api/urls.py, backend-django/Dockerfile e docker-compose.yml.
+A infraestrutura e a integração das entregas disponíveis estão concluídas. A finalização depende das entregas abaixo e da validação visual.
+
+### Concluído
+
+- [x] **FEITO** — CORS e resposta OPTIONS com HTTP 204.
+- [x] **FEITO** — Dispensa de CSRF na API, mantendo a proteção do admin.
+- [x] **FEITO** — api/urls.py conectado às URLs do projeto; clientes, vagas e dashboard registrados.
+- [x] **FEITO** — URLs com e sem barra final, incluindo POST e PUT sem redirecionamentos.
+- [x] **FEITO** — Docker com Django na porta 8080 e frontend Nginx, sem serviço PostgreSQL.
+- [x] **FEITO** — DB_PATH, volume SQLite persistente e migrations automáticas na inicialização.
+- [x] **FEITO** — Models e migration inicial conferidos; nenhuma mudança necessária para as entregas atuais.
+- [x] **FEITO** — README atualizado com execução, testes e estado da migração.
+- [x] **FEITO** — Testes de integração e conferência HTTP pelo Nginx; criação automática do banco e persistência após restart e recriação dos containers.
+
+### O que falta terminar
+
+- [ ] **Conferir visualmente clientes, vagas e dashboard no frontend.** Pode ser feito agora por Matheus; a ferramenta de navegador está indisponível nesta sessão.
+- [ ] **Revalidar clientes** depois que Eduarda entregar os ajustes e testes pendentes.
+- [ ] **Integrar veículos e registrar suas rotas** depois da entrega de Joabe.
+- [ ] **Integrar permanências e registrar suas rotas** depois dos ajustes e testes de C.
+- [ ] **Revisar models/migrations das novas entregas**, aplicando somente as mudanças necessárias à integração.
+- [ ] **Validar o sistema completo pelo frontend:** cadastro de veículo → entrada → conflitos → saída → cobrança → histórico e totais do dashboard. Conferir 30 min = R$ 5, 60 min = R$ 5 e 61 min = R$ 10.
+- [ ] **Atualizar o README com o resultado final** após integrar e validar as entregas restantes.
+
+### Dependências
+
+| Responsável | O que precisa entregar para Matheus continuar |
+|-------------|----------------------------------------------|
+| Eduarda | Erros 405 em JSON com a chave error e testes de clientes: validações, CPF duplicado, cliente inexistente e exclusão bloqueada por relacionamentos. A implementação principal já está integrada. |
+| Joabe | veiculo_views.py com lista_veiculos, detalhe_veiculo e os testes previstos. A entrega ainda não está disponível nas branches remotas conferidas. |
+| C. | Corrigir os imports entre views, services, models e URLs na branch feature/funcoes_persistencia; usar error no JSON dos erros e entregar os testes de permanências e cobrança. |
+
+**Última conferência:** 12/11/2026. Branches remotas atualizadas; 53 testes aprovados; check, makemigrations --check --dry-run e configuração Compose sem problemas. Django e Nginx em execução; páginas, assets e rotas disponíveis respondendo pelo proxy. Persistência já verificada no Windows/Docker, com os registros de teste removidos ao final.
 
 ## Eduarda — clientes
 
@@ -113,5 +135,5 @@ python manage.py check
 python manage.py runserver 8080
 ```
 
-Usar uma versão de Python compatível com o Django instalado. As rotas da API só funcionarão depois de implementadas e conectadas. Enquanto o Compose não for adaptado, ele continua subindo Java + PostgreSQL.
+Usar Python 3.12 ou superior; requirements.txt fixa Django 6.1.2 (ambiente validado com Python 3.14). Clientes, vagas e dashboard já estão conectados. O Compose agora sobe Django + SQLite e o frontend Nginx; veículos e permanências aguardam as entregas indicadas acima.
 

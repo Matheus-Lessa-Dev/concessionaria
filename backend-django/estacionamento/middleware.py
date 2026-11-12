@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.middleware.csrf import CsrfViewMiddleware
 
 
 class CorsMiddleware:
@@ -18,3 +19,12 @@ class CorsMiddleware:
         response['Access-Control-Allow-Headers'] = 'Content-Type'
 
         return response
+
+
+class ApiCsrfMiddleware(CsrfViewMiddleware):
+    """Dispensa CSRF somente em /api/, inclusive nas novas views dos colegas."""
+
+    def process_view(self, request, callback, callback_args, callback_kwargs):
+        if request.path_info.startswith('/api/'):
+            return None
+        return super().process_view(request, callback, callback_args, callback_kwargs)

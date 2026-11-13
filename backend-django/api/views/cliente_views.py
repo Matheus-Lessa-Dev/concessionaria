@@ -6,7 +6,6 @@ from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError, RestrictedError
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 
 from api.models import Cliente
 
@@ -30,9 +29,16 @@ def _erro(mensagem, status):
     return JsonResponse({"error": mensagem}, status=status)
 
 
+def _metodo_invalido(metodos):
+    return JsonResponse(
+        {"error": "Método não permitido."}, status=405,
+        headers={"Allow": metodos},
+    )
+
+
 def _ler_json(request):
     try:
-        dados = json.loads(request.body.decode("utf-8"))
+        dados = json.loads(request.body)
     except (ValueError, UnicodeDecodeError):
         return None
     return dados if isinstance(dados, dict) else None
@@ -85,8 +91,10 @@ def _validar(dados):
 
 
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
 def lista_clientes(request):
+    if request.method not in ("GET", "POST"):
+        return _metodo_invalido("GET, POST, OPTIONS")
+
     if request.method == "GET":
         clientes = Cliente.objects.all().order_by("id")
         return JsonResponse([cliente_to_dict(c) for c in clientes], safe=False)
@@ -112,8 +120,10 @@ def lista_clientes(request):
 
 
 @csrf_exempt
-@require_http_methods(["GET", "PUT", "DELETE"])
 def detalhe_cliente(request, id):
+    if request.method not in ("GET", "PUT", "DELETE"):
+        return _metodo_invalido("GET, PUT, DELETE, OPTIONS")
+
     try:
         cliente = Cliente.objects.get(pk=id)
     except Cliente.DoesNotExist:

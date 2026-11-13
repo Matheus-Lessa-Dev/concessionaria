@@ -10,10 +10,14 @@ def validar_id(valor):
         return False
 
     if isinstance(valor, int):
-        return valor > 0
+        return 0 < valor < 2**63
 
     if isinstance(valor, str):
-        return valor.strip().isdigit() and int(valor.strip()) > 0
+        valor = valor.strip()
+        return (
+            valor.isascii() and valor.isdecimal() and len(valor) <= 19
+            and 0 < int(valor) < 2**63
+        )
 
     return False
 
@@ -57,7 +61,7 @@ def entrada(request):
             status=201
         )
 
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse(
             {"error": "JSON inválido."},
             status=400

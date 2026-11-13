@@ -262,7 +262,7 @@ class DetalheVagaPutTests(BaseApiTest):
         )
         self.assertEqual(self.corpo(r)['numero'], 'B2')
 
-    def test_status_ausente_ou_null_vira_livre(self):
+    def test_status_ausente_ou_null_preserva_o_atual(self):
         vaga = self.criar_vaga('A1', status='OCUPADA')
         for extra in [{}, {'status': None}]:
             with self.subTest(extra=extra):
@@ -273,7 +273,7 @@ class DetalheVagaPutTests(BaseApiTest):
                     {'numero': 'A1', 'tipo': 'CARRO', **extra},
                 )
                 self.assertEqual(r.status_code, 200)
-                self.assertEqual(self.corpo(r)['status'], 'LIVRE')
+                self.assertEqual(self.corpo(r)['status'], 'OCUPADA')
 
     def test_status_invalido_retorna_400_e_nao_altera(self):
         vaga = self.criar_vaga('A1', status='OCUPADA')

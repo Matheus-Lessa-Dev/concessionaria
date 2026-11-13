@@ -144,5 +144,11 @@ class ClienteApiTests(TestCase):
         self.assertEqual(self.client.delete(f"{self.url}999/").status_code, 404)
 
     def test_metodo_nao_permitido(self):
-        self.assertEqual(self.client.delete(self.url).status_code, 405)
-        self.assertEqual(self.client.post(f"{self.url}1/").status_code, 405)
+        for metodo, url, permitidos in (
+            ('delete', self.url, 'GET, POST, OPTIONS'),
+            ('post', f'{self.url}1/', 'GET, PUT, DELETE, OPTIONS'),
+        ):
+            resposta = getattr(self.client, metodo)(url)
+            self.assertEqual(resposta.status_code, 405)
+            self.assertIn('error', resposta.json())
+            self.assertEqual(resposta['Allow'], permitidos)

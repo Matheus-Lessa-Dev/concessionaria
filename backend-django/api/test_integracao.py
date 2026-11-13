@@ -1,6 +1,8 @@
 """Integração das entregas pelas URLs reais, com CSRF habilitado no cliente."""
 
 from django.http import JsonResponse
+from django.apps import apps
+from django.conf import settings
 from django.middleware.csrf import get_token
 from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import re_path, resolve
@@ -70,9 +72,14 @@ class IntegracaoApiTests(TestCase):
         rotas = {
             '/api/clientes': 'lista_clientes',
             '/api/clientes/1': 'detalhe_cliente',
+            '/api/veiculos': 'lista_veiculos',
+            '/api/veiculos/1': 'detalhe_veiculo',
             '/api/vagas': 'lista_vagas',
             '/api/vagas/1': 'detalhe_vaga',
             '/api/dashboard': 'dashboard',
+            '/api/permanencias': 'lista_permanencias',
+            '/api/permanencias/entrada': 'registrar_entrada',
+            '/api/permanencias/1/saida': 'registrar_saida',
         }
         for rota, nome in rotas.items():
             for sufixo in ('', '/'):
@@ -161,6 +168,11 @@ class IntegracaoApiTests(TestCase):
                 self.assertEqual(self.client.get(rota).status_code, 404)
 
     def test_api_nao_utiliza_sessoes_nem_autenticacao(self):
+        self.assertFalse(apps.is_installed('django.contrib.auth'))
+        self.assertFalse(apps.is_installed('django.contrib.sessions'))
+        self.assertFalse(apps.is_installed('django.contrib.admin'))
+        self.assertNotIn('django.contrib.auth.middleware.AuthenticationMiddleware', settings.MIDDLEWARE)
+        self.assertNotIn('django.contrib.sessions.middleware.SessionMiddleware', settings.MIDDLEWARE)
         resposta = self.client.get('/api/dashboard')
         self.assertEqual(resposta.status_code, 200)
         self.assertFalse(hasattr(resposta.wsgi_request, 'session'))

@@ -2,6 +2,8 @@ import math
 from datetime import datetime
 from decimal import Decimal
 
+from django.db import transaction
+
 from ..models import Permanencia, Veiculo, Vaga
 
 
@@ -29,14 +31,19 @@ def permanencia_to_dict(permanencia):
     }
 
 def _calcular_valor(entrada, saida):
-    tempo_decorrido = (saida - entrada).total_seconds()
+    duracao = saida - entrada
+    microssegundos = (
+        (duracao.days * 86400 + duracao.seconds) * 1_000_000
+        + duracao.microseconds
+    )
 
-    horas = max(1, math.ceil(tempo_decorrido / 3600))
+    horas = max(1, math.ceil(Decimal(microssegundos) / Decimal(3_600_000_000)))
 
     return TARIFA_POR_HORA * Decimal(horas)
 
 
 
+@transaction.atomic
 def registrar_entrada(veiculo_id, vaga_id):
     if Permanencia.objects.filter(
         veiculo_id=veiculo_id,
@@ -56,7 +63,9 @@ def registrar_entrada(veiculo_id, vaga_id):
     except Vaga.DoesNotExist:
         raise LookupError("Vaga não encontrada.")
 
-    if vaga.status != "LIVRE":
+    if vaga.status != "LIVRE" or Permanencia.objects.filter(
+        vaga=vaga, status="ABERTO"
+    ).exists():
         raise ValueError("Vaga já está ocupada.")
 
     vaga.status = "OCUPADA"
@@ -72,9 +81,12 @@ def registrar_entrada(veiculo_id, vaga_id):
     return permanencia
 
 
+@transaction.atomic
 def registrar_saida(permanencia_id):
     try:
-        permanencia = Permanencia.objects.get(id=permanencia_id)
+        permanencia = Permanencia.objects.select_related('veiculo', 'vaga').get(
+            id=permanencia_id
+        )
     except Permanencia.DoesNotExist:
         raise LookupError("Permanência não encontrada.")
 

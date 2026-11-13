@@ -226,3 +226,16 @@ class PermanenciaTests(TestCase):
         valor = _calcular_valor(entrada, saida)
 
         self.assertEqual(valor, Decimal("10.00"))
+
+    def test_cobranca_fracao_minima_apos_uma_hora(self):
+        entrada = datetime(2026, 1, 1, 10, 0)
+        saida = entrada + timedelta(hours=1, microseconds=1)
+        self.assertEqual(_calcular_valor(entrada, saida), Decimal('10.00'))
+
+    def test_cobranca_minima_e_multiplos_dias(self):
+        entrada = datetime(2026, 1, 1, 10, 0)
+        self.assertEqual(_calcular_valor(entrada, entrada), Decimal('5.00'))
+        self.assertEqual(
+            _calcular_valor(entrada, entrada + timedelta(days=2, minutes=1)),
+            Decimal('245.00'),
+        )

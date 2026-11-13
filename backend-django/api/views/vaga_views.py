@@ -1,6 +1,6 @@
 import json
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -112,6 +112,7 @@ def lista_vagas(request):
     )
 
 @csrf_exempt
+@transaction.atomic
 def detalhe_vaga(request, id):
 
     if request.method == 'GET':
@@ -140,7 +141,6 @@ def detalhe_vaga(request, id):
 
         numero = dados['numero'].strip()
         tipo = dados['tipo']
-        status = dados.get('status') or 'LIVRE'
 
         try:
             vaga = Vaga.objects.get(id=id)
@@ -150,12 +150,20 @@ def detalhe_vaga(request, id):
                 status=404
             )
 
+        # Uma edição não pode liberar uma vaga com veículo ainda estacionado.
+        status = dados.get('status') or vaga.status
+        if status == 'LIVRE' and vaga.permanencia_set.filter(status='ABERTO').exists():
+            return JsonResponse(
+                {'error': 'Registre a saída antes de liberar a vaga'}, status=409
+            )
+
         vaga.numero = numero
         vaga.tipo = tipo
         vaga.status = status
 
         try:
-            vaga.save()
+            with transaction.atomic():
+                vaga.save()
         except IntegrityError:
             return JsonResponse(
                 {'error': 'Número de vaga já cadastrado'},
